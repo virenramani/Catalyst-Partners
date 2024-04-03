@@ -1,6 +1,6 @@
 import scrapy
 import os
-
+import re
 
 class NevadaEPro(scrapy.Spider):
     name = "nevadaepro"
@@ -312,8 +312,16 @@ class NevadaEPro(scrapy.Spider):
         """
         Saves the downloaded files in the appropriate directory.
         """
+        content_disposition = response.headers.get(b'Content-Disposition', b'').decode('utf-8')
+        filename_match = re.search(r'filename="([^"]+)"', content_disposition)
+
+        if filename_match:
+            FileName = filename_match.group(1)
+        else:
+            FileName = response.meta.get("FileName")
+            print("\n\nFilename not found in Content-Disposition header.")
+
         BidNumber = response.meta.get("BidNumber")
-        FileName = response.meta.get("FileName")
         bid_directory = os.path.join(self.attachments_directory, BidNumber)
         self.create_directory_if_not_exists(bid_directory)
         self.save_file_in_directory(bid_directory, FileName, response.body)
